@@ -156,28 +156,26 @@ jobs:
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
             directory="/var/www/vr-club"
+            export DB_HOST='${{ secrets.DB_HOST }}'
+            export DB_PORT='${{ secrets.DB_PORT }}'
+            export DB_NAME='${{ secrets.DB_NAME }}'
+            export DB_USER='${{ secrets.DB_USER }}'
+            export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            export ALLOWED_HOSTS='${{ secrets.ALLOWED_HOSTS }}'
+            export SECRET_KEY='${{ secrets.SECRET_KEY }}'
+            export DEBUG='${{ secrets.DEBUG }}'
+            export EMAIL_HOST_USER='${{ secrets.EMAIL_HOST_USER }}'
+            export EMAIL_HOST_PASSWORD='${{ secrets.EMAIL_HOST_PASSWORD }}'
+            export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
+            export GOOGLE_SECRET='${{ secrets.GOOGLE_SECRET }}'
+            export SUB_DOMAIN='${{ secrets.SUB_DOMAIN }}'
+            export CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
+            export USE_X_FORWARDED_HOST='${{ secrets.USE_X_FORWARDED_HOST }}'
+
             if [ -d "$directory" ]; then
                 cd /var/www/
                 cd vr-club
                 source venv/bin/activate
-            
-                export DB_HOST='${{ secrets.DB_HOST }}'
-                export DB_PORT='${{ secrets.DB_PORT }}'
-                export DB_NAME='${{ secrets.DB_NAME }}'
-                export DB_USER='${{ secrets.DB_USER }}'
-                export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-                export ALLOWED_HOSTS='${{ secrets.ALLOWED_HOSTS }}'
-                export SECRET_KEY='${{ secrets.SECRET_KEY }}'
-                export DEBUG='${{ secrets.DEBUG }}'
-                export EMAIL_HOST_USER='${{ secrets.EMAIL_HOST_USER }}'
-                export EMAIL_HOST_PASSWORD='${{ secrets.EMAIL_HOST_PASSWORD }}'
-                export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
-                export GOOGLE_SECRET='${{ secrets.GOOGLE_SECRET }}'
-                export SUB_DOMAIN='${{ secrets.SUB_DOMAIN }}'
-                export CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
-                export USE_X_FORWARDED_HOST='${{ secrets.USE_X_FORWARDED_HOST }}'
-                export BOOKING_TELEGRAM_API_TOKEN='${{ secrets.BOOKING_TELEGRAM_API_TOKEN }}'
-                export BOOKING_TELEGRAM_CHAT_ID='${{ secrets.BOOKING_TELEGRAM_CHAT_ID }}'
       
                 git pull
                 pip3 install -r requirements.txt
@@ -192,29 +190,11 @@ jobs:
                 sudo apt-get update -y
                 sudo apt install -y nginx
                 cd /var/www/
-                git clone https://github.com/qqlexa/vr-club
+                git clone https://github.com/qqlexa/vr-club.git
                 cd vr-club
                 sudo apt-get install -y python3.11-venv
                 python3.11 -m venv venv
                 source venv/bin/activate
-                
-                export DB_HOST='${{ secrets.DB_HOST }}'
-                export DB_PORT='${{ secrets.DB_PORT }}'
-                export DB_NAME='${{ secrets.DB_NAME }}'
-                export DB_USER='${{ secrets.DB_USER }}'
-                export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-                export ALLOWED_HOSTS='${{ secrets.ALLOWED_HOSTS }}'
-                export SECRET_KEY='${{ secrets.SECRET_KEY }}'
-                export DEBUG='${{ secrets.DEBUG }}'
-                export EMAIL_HOST_USER='${{ secrets.EMAIL_HOST_USER }}'
-                export EMAIL_HOST_PASSWORD='${{ secrets.EMAIL_HOST_PASSWORD }}'
-                export GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
-                export GOOGLE_SECRET='${{ secrets.GOOGLE_SECRET }}'
-                export SUB_DOMAIN='${{ secrets.SUB_DOMAIN }}'
-                export CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
-                export USE_X_FORWARDED_HOST='${{ secrets.USE_X_FORWARDED_HOST }}'
-                export BOOKING_TELEGRAM_API_TOKEN='${{ secrets.BOOKING_TELEGRAM_API_TOKEN }}'
-                export BOOKING_TELEGRAM_CHAT_ID='${{ secrets.BOOKING_TELEGRAM_CHAT_ID }}'
             
                 sudo apt-get install -y libpq-dev python3-dev
                 sudo apt-get install -y build-essential
@@ -227,7 +207,7 @@ jobs:
                 sudo service postgresql start
                 sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }};"
                 sudo -u postgres psql -c "ALTER USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
-                sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO  ${{ secrets.DB_USER }};"
+                sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
 
                 python manage.py migrate
                 python manage.py collectstatic --no-input
