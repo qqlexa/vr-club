@@ -155,7 +155,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
-            directory="/var/www/vr-club"
             export DB_HOST='${{ secrets.DB_HOST }}'
             export DB_PORT='${{ secrets.DB_PORT }}'
             export DB_NAME='${{ secrets.DB_NAME }}'
@@ -173,98 +172,102 @@ jobs:
             export USE_X_FORWARDED_HOST='${{ secrets.USE_X_FORWARDED_HOST }}'
             export BOOKING_TELEGRAM_API_TOKEN='${{ secrets.BOOKING_TELEGRAM_API_TOKEN }}'
             export BOOKING_TELEGRAM_CHAT_ID='${{ secrets.BOOKING_TELEGRAM_CHAT_ID }}'
-
-            if [ -d "$directory" ]; then
-                cd /var/www/
-                cd vr-club
-                source venv/bin/activate
-      
-                git pull
-                pip3 install -r requirements.txt
-                python manage.py migrate
-                rm -r static
-                python manage.py collectstatic --no-input
-                gunicorn vr_club.wsgi:application --bind $SUB_DOMAIN:8000 --workers 3 --threads 2 --pid /tmp/gunicorn.pid --daemon
-                kill -HUP $(cat /tmp/gunicorn.pid)
-                sudo nginx -t
-                sudo service nginx restart
-            else
-                sudo apt-get update -y
-                sudo apt install -y nginx
-                cd /var/www/
-                git clone https://github.com/qqlexa/vr-club.git
-                cd vr-club
-                sudo apt-get install -y python3.11-venv
-                python3.11 -m venv venv
-                source venv/bin/activate
             
-                sudo apt-get install -y libpq-dev python3-dev
-                sudo apt-get install -y build-essential
-                sudo apt-get install -y python3.11-dev
+            directory="/var/www/vr-club"
+            if [ -d "$directory" ]; then
+              echo "Directory $directory was found"
 
-                pip3 install -r requirements.txt
-                
-                sudo apt-get update
-                sudo apt-get install postgresql postgresql-contrib -y
-                sudo service postgresql start
-                sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }};"
-                sudo -u postgres psql -c "ALTER USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
-                sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
+              cd /var/www/vr-club
+              source venv/bin/activate
+    
+              git pull
+              pip3 install -r requirements.txt
+              python manage.py migrate
+              rm -r static
+              python manage.py collectstatic --no-input
+              gunicorn vr_club.wsgi:application --bind $SUB_DOMAIN:8000 --workers 3 --threads 2 --pid /tmp/gunicorn.pid --daemon
+              kill -HUP $(cat /tmp/gunicorn.pid)
+              sudo nginx -t
+              sudo service nginx restart
+            else
+              echo "Directory $directory was not found"
 
-                python manage.py migrate
-                python manage.py collectstatic --no-input
+              sudo apt-get update -y
+              sudo apt install -y nginx
+              cd /var/www/
+              git clone https://github.com/qqlexa/vr-club.git
+              cd vr-club
+              sudo apt-get install -y python3.11-venv
+              python3.11 -m venv venv
+              source venv/bin/activate
+          
+              sudo apt-get install -y libpq-dev python3-dev
+              sudo apt-get install -y build-essential
+              sudo apt-get install -y python3.11-dev
 
-                yes | pip3 install gunicorn
-                cd vr-club
-                gunicorn vr_club.wsgi:application --bind $SUB_DOMAIN:8000 --workers 3 --threads 2 --pid /tmp/gunicorn.pid --daemon
+              pip3 install -r requirements.txt
+              
+              sudo apt-get update
+              sudo apt-get install postgresql postgresql-contrib -y
+              sudo service postgresql start
+              sudo -u postgres psql -c "CREATE DATABASE ${{ secrets.DB_NAME }};"
+              sudo -u postgres psql -c "ALTER USER ${{ secrets.DB_USER }} WITH PASSWORD '${{ secrets.DB_PASSWORD }}';"
+              sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${{ secrets.DB_NAME }} TO ${{ secrets.DB_USER }};"
 
-                echo "server {
-                  listen 80;
-                  server_name $ALLOWED_HOSTS;
-                
-                  location = /favicon.ico { access_log off; log_not_found off; }
-                
-                  location / {
-                    proxy_pass http://$SUB_DOMAIN:8000;
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                  }
-                  location /static/ {
-                    alias /var/www/vr-club/static/;
-                   }
-                  location /media/ {
-                      alias /var/www/vr-club/media/;
-                    }
+              python manage.py migrate
+              python manage.py collectstatic --no-input
+
+              yes | pip3 install gunicorn
+              cd /var/www/vr-club/
+              gunicorn vr_club.wsgi:application --bind $SUB_DOMAIN:8000 --workers 3 --threads 2 --pid /tmp/gunicorn.pid --daemon
+
+              echo "server {
+                listen 80;
+                server_name $ALLOWED_HOSTS;
+              
+                location = /favicon.ico { access_log off; log_not_found off; }
+              
+                location / {
+                  proxy_pass http://$SUB_DOMAIN:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
                 }
-                  
-                server {
-                  listen 443;
-                  server_name $ALLOWED_HOSTS;
-                  
-                  ssl                  on;
-                  ssl_certificate      /var/www/certificate.crt;
-                  ssl_certificate_key  /var/www/private.key;
-                  
-                  access_log   /var/log/nginx/nginx.vhost.access.log;
-                  error_log    /var/log/nginx/nginx.vhost.error.log;
-                  location / {
-                    proxy_pass http://$SUB_DOMAIN:8000;
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                  }
-                  location /static/ {
-                    alias /var/www/vr-club/static/;
-                  }
-                  location /media/ {
+                location /static/ {
+                  alias /var/www/vr-club/static/;
+                 }
+                location /media/ {
                     alias /var/www/vr-club/media/;
                   }
-                }" > /etc/nginx/sites-available/vr-club
-                    
-                sudo ln -s /etc/nginx/sites-available/vr-club /etc/nginx/sites-enabled
-                sudo nginx -t
-                sudo service nginx restart
+              }
+                
+              server {
+                listen 443;
+                server_name $ALLOWED_HOSTS;
+                
+                ssl                  on;
+                ssl_certificate      /var/www/certificate.crt;
+                ssl_certificate_key  /var/www/private.key;
+                
+                access_log   /var/log/nginx/nginx.vhost.access.log;
+                error_log    /var/log/nginx/nginx.vhost.error.log;
+                location / {
+                  proxy_pass http://$SUB_DOMAIN:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+                location /static/ {
+                  alias /var/www/vr-club/static/;
+                }
+                location /media/ {
+                  alias /var/www/vr-club/media/;
+                }
+              }" > /etc/nginx/sites-available/vr-club
+                  
+              sudo ln -s /etc/nginx/sites-available/vr-club /etc/nginx/sites-enabled
+              sudo nginx -t
+              sudo service nginx restart
             fi
