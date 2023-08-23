@@ -192,7 +192,7 @@ jobs:
                 sudo apt-get update -y
                 sudo apt install -y nginx
                 cd /var/www/
-                git clone https://github.com/RezenkovD/vr-club.git
+                git clone https://github.com/qqlexa/vr-club
                 cd vr-club
                 sudo apt-get install -y python3.11-venv
                 python3.11 -m venv venv

@@ -5,7 +5,7 @@
 ### 💾 Downloading the project
 #### Git clone
 ```bash
-git clone https://github.com/RezenkovD/vr-club.git
+git clone https://github.com/qqlexa/vr-club
 ```
 
 
